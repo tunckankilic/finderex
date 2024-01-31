@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "670641032832",
+    "project_id": "finderex-dev",
+    "storage_bucket": "finderex-dev.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:670641032832:android:fb49d73befdf6670c06065",
+        "android_client_info": {
+          "package_name": "io.finderex.finderex"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBr7p94o9Tze9t5UVAIjfiIa9fBIlTIpTM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
