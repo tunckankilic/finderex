@@ -1,10 +1,14 @@
 import 'dart:developer';
 import 'package:finderex/common/notification/fcm_service.dart';
 import 'package:finderex/controllers/token_storage.dart';
+import 'package:finderex/view/login/view.dart';
+import 'package:finderex/view/notifications/view.dart';
 import 'package:finderex/view/onboarding/bindings.dart';
+import 'package:finderex/view/onboarding/view.dart';
 import 'package:finderex/view/splash/view.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -30,8 +34,8 @@ Future main() async {
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   await FCMService().setupFCM();
   await TokenStorage.init();
-
-  runApp(MyApp());
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -40,10 +44,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ScreenUtilInit(
+      designSize: const Size(375, 812),
+      minTextAdapt: true,
       child: GetMaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Material App',
-        home: Splash(),
+        home: const Splash(),
         initialBinding: OnboardingBinding(),
       ),
     );

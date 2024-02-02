@@ -33,9 +33,9 @@ class _SplashState extends State<Splash> {
             width: double.infinity,
             height: double.infinity,
             alignment: Alignment.center,
-            margin: const EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 35,
+            margin:  EdgeInsets.symmetric(
+              horizontal: 20.w,
+              vertical: 35.h,
             ),
             child: StreamBuilder(
               stream: Connectivity().onConnectivityChanged,
@@ -97,11 +97,11 @@ class _ConnectedState extends State<Connected> {
             const Spacer(),
             Padding(
               padding: EdgeInsets.only(bottom: 50.h),
-              child: const Text(
+              child:  Text(
                 "Finderex’le dilediğin stratejiyi belirle, yatırımını özgürce yap. Esnek stratejiler, bağımsız kararlar, özgür yatırım.",
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 14.sp,
                     fontWeight: FontWeight.w400,
                     color: Colors.white),
               ),

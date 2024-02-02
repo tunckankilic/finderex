@@ -54,10 +54,13 @@ class LoginController extends GetxController {
 
         String token = responseData["data"]["access"];
         log("Token: $token");
+        String session = responseData["data"]["session"];
+        log("Session: $session");
         // Token'ı kaydet
         await TokenStorage.saveToken(token);
+        await TokenStorage.saveSession(session);
 
-        Get.offAll(const NotificationView());
+        Get.offAll(NotificationView());
         return responseData;
       } else {
         // HTTP isteği başarısız oldu.

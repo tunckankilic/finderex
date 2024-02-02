@@ -1,7 +1,8 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TokenStorage {
-  static const String _tokenKey = 'user_token';
+  static const String sTokenKey = 'user_token';
+  static const String sSessionKey = "usersSessionKey";
   static late SharedPreferences _prefs;
 
   // İlk defa çağrıldığında çalışacak başlatma fonksiyonu
@@ -10,14 +11,26 @@ class TokenStorage {
   }
 
   static Future<void> saveToken(String token) async {
-    await _prefs.setString(_tokenKey, token);
+    await _prefs.setString(sTokenKey, token);
+  }
+
+  static Future<void> saveSession(String session) async {
+    await _prefs.setString(sSessionKey, session);
   }
 
   static Future<String?> getToken() async {
-    return _prefs.getString(_tokenKey);
+    return _prefs.getString(sTokenKey);
+  }
+
+  static Future<String?> getSession() async {
+    return _prefs.getString(sSessionKey);
   }
 
   static Future<void> removeToken() async {
-    await _prefs.remove(_tokenKey);
+    await _prefs.remove(sTokenKey);
+  }
+
+  static Future<void> removeSession() async {
+    await _prefs.remove(sSessionKey);
   }
 }

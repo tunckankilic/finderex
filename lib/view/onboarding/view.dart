@@ -20,7 +20,7 @@ class Onboarding extends GetView<OnboardingController> {
         int page = controller.state.index.value;
         return SizedBox(
           width: 360.w,
-          height: 780.w,
+          height: 780.h,
           child: Stack(
             alignment: Alignment.bottomCenter,
             children: [
@@ -36,8 +36,8 @@ class Onboarding extends GetView<OnboardingController> {
                   physics: const ClampingScrollPhysics(),
                   children: controller.pictures),
               Positioned(
-                left: 24,
-                bottom: 70,
+                left: 24.w,
+                bottom: 70.h,
                 child: DotsIndicator(
                   position: controller.state.index.value,
                   dotsCount: 4,
@@ -53,8 +53,8 @@ class Onboarding extends GetView<OnboardingController> {
                                 : controller.state.index.value == 3
                                     ? const Color(0xFFED1163)
                                     : const Color(0xFF484866),
-                    size: const Size(8.0, 4.0),
-                    activeSize: const Size(20.0, 4.0),
+                    size: Size(8.0.w, 4.0.h),
+                    activeSize: Size(20.0.w, 4.0.h),
                     activeShape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(5),
                     ),
@@ -62,8 +62,8 @@ class Onboarding extends GetView<OnboardingController> {
                 ),
               ),
               Positioned(
-                right: 24,
-                bottom: 70,
+                right: 24.w,
+                bottom: 70.h,
                 child: ElevatedButton(
                   onPressed: () {
                     if (controller.pageController.page !=
@@ -91,10 +91,9 @@ class Onboarding extends GetView<OnboardingController> {
                                     ? const Color(0xFFED1163)
                                     : const Color(0xFF484866),
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.arrow_forward,
-                    color: Colors
-                        .white, // Burada icon rengini belirleyebilirsiniz.
+                    color: Colors.white,
                   ),
                 ),
               )

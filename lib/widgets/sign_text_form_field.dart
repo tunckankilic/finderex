@@ -188,7 +188,7 @@ class _SignTextFormFieldState extends State<SignTextFormField> {
                   topRight: Radius.circular(widget.borderRadius),
                 ),
               ),
-          filled: true,
+          filled: false,
           fillColor: widget.fillColor,
           contentPadding: widget.contentPadding,
           floatingLabelBehavior: FloatingLabelBehavior.always,
