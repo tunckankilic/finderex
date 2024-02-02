@@ -2,9 +2,11 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:dartz/dartz.dart';
+import 'package:finderex/controllers/token_storage.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class FCMService {
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
@@ -103,7 +105,10 @@ class FCMService {
     // FCM token'ını alma
     String? fcmToken = await _firebaseMessaging.getToken();
     log("FCM Token: $fcmToken");
-    sendFCMTokenToServer(fcmToken!);
+    var sp = await SharedPreferences.getInstance();
+    sp.getString(TokenStorage.sTokenKey) != null
+        ? sendFCMTokenToServer(fcmToken!)
+        : null;
     // FCM token'ını sunucuya gönderme (isteğe bağlı)
     // Bu adımda sunucunuza kullanıcının FCM token'ını gönderebilirsiniz.
     // Bu token'ı kullanarak kullanıcıya özgü bildirim gönderebilirsiniz.
@@ -112,18 +117,21 @@ class FCMService {
   Future<void> sendFCMTokenToServer(String fcmToken) async {
     // Sunucunuzun API endpoint'i
     const String apiUrl = 'https://demoauthv2.finderex.io/v2/user/fcm-token';
-
+    var sp = await SharedPreferences.getInstance();
+    var token = sp.getString(TokenStorage.sTokenKey);
     // Sunucuya gönderilecek veri
     final Map<String, dynamic> requestData = {
       "type_of": "mobile",
       "token": fcmToken,
+      "is_act": true,
     };
 
     // HTTP POST isteği oluştur
-    final http.Response response = await http.post(
-      Uri.parse(apiUrl),
-      body: requestData,
-    );
+    final http.Response response = await http
+        .post(Uri.parse(apiUrl), body: json.encode(requestData), headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    });
 
     // Sunucudan dönen cevap
     if (response.statusCode == 200) {

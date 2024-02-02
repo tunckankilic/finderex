@@ -15,22 +15,34 @@ class OnboardingController extends GetxController {
     SizedBox(
       width: double.infinity,
       height: double.infinity,
-      child: Image.asset("images/onboarding/giris1.png"),
+      child: Image.asset(
+        "images/onboarding/giris1.png",
+        fit: BoxFit.cover,
+      ),
     ),
     SizedBox(
       width: double.infinity,
       height: double.infinity,
-      child: Image.asset("images/onboarding/giris2.png"),
+      child: Image.asset(
+        "images/onboarding/giris2.png",
+        fit: BoxFit.cover,
+      ),
     ),
     SizedBox(
       width: double.infinity,
       height: double.infinity,
-      child: Image.asset("images/onboarding/giris3.png"),
+      child: Image.asset(
+        "images/onboarding/giris3.png",
+        fit: BoxFit.cover,
+      ),
     ),
     SizedBox(
       width: double.infinity,
       height: double.infinity,
-      child: Image.asset("images/onboarding/giris4.png"),
+      child: Image.asset(
+        "images/onboarding/giris4.png",
+        fit: BoxFit.cover,
+      ),
     ),
   ];
 

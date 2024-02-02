@@ -1,6 +1,8 @@
 import 'dart:developer';
 import 'package:finderex/common/notification/fcm_service.dart';
+import 'package:finderex/controllers/token_controller.dart';
 import 'package:finderex/controllers/token_storage.dart';
+import 'package:finderex/view/home.dart';
 import 'package:finderex/view/login/view.dart';
 import 'package:finderex/view/notifications/view.dart';
 import 'package:finderex/view/onboarding/bindings.dart';
@@ -35,6 +37,7 @@ Future main() async {
   await FCMService().setupFCM();
   await TokenStorage.init();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  Get.put(TokenController()).onInit();
   runApp(const MyApp());
 }
 
@@ -48,8 +51,24 @@ class MyApp extends StatelessWidget {
       minTextAdapt: true,
       child: GetMaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Material App',
-        home: const Splash(),
+        title: 'Finderex',
+        home: FutureBuilder<String?>(
+          future: TokenStorage.getToken(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.done) {
+              final String? userName = snapshot.data;
+              // Check if userName is not null
+              if (userName != null) {
+                return Home();
+              } else {
+                return const Splash();
+              }
+            } else {
+              // If the Future is still running, show a loading indicator or another widget
+              return const CircularProgressIndicator();
+            }
+          },
+        ),
         initialBinding: OnboardingBinding(),
       ),
     );

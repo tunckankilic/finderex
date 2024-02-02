@@ -33,7 +33,7 @@ class _SplashState extends State<Splash> {
             width: double.infinity,
             height: double.infinity,
             alignment: Alignment.center,
-            margin:  EdgeInsets.symmetric(
+            margin: EdgeInsets.symmetric(
               horizontal: 20.w,
               vertical: 35.h,
             ),
@@ -97,7 +97,7 @@ class _ConnectedState extends State<Connected> {
             const Spacer(),
             Padding(
               padding: EdgeInsets.only(bottom: 50.h),
-              child:  Text(
+              child: Text(
                 "Finderex’le dilediğin stratejiyi belirle, yatırımını özgürce yap. Esnek stratejiler, bağımsız kararlar, özgür yatırım.",
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -122,7 +122,7 @@ Widget noInternet() {
         ElevatedButton(
           onPressed: () {
             runApp(
-              const MyApp(),
+              MyApp(),
             );
           },
           child: const Text("Re-Start"),

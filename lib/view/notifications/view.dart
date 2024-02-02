@@ -29,15 +29,20 @@ class NotificationView extends GetView<NotificationController> {
         backgroundColor: Colors.transparent,
         body: Column(
           children: [
-            const NotificationTitle(),
+            NotificationTitle(),
             NotificationCategoryRow(),
             const NotificationColumnTitle(),
             SizedBox(
               height: 615.h,
               child: PageView.builder(
                 controller: controller.pageController,
+                itemCount: controller.pages.length,
+                onPageChanged: (index) {
+                  controller.changePage(index);
+                  controller.updateSelectedIndex(index);
+                },
                 itemBuilder: (context, index) {
-                  return controller.pages[controller.selectedIndex.value];
+                  return controller.pages[index];
                 },
               ),
             ),
@@ -49,10 +54,10 @@ class NotificationView extends GetView<NotificationController> {
 }
 
 class NotificationTitle extends StatelessWidget {
-  const NotificationTitle({
+  NotificationTitle({
     super.key,
   });
-
+  NotificationController myController = Get.put(NotificationController());
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -68,7 +73,9 @@ class NotificationTitle extends StatelessWidget {
                 fontSize: 24.sp),
           ),
           IconButton(
-            onPressed: () {},
+            onPressed: () {
+              myController.cikisYap(context);
+            },
             icon: Icon(
               Icons.close,
               size: 30.w,
@@ -139,89 +146,79 @@ class NotificationOption extends StatelessWidget {
     String formattedTimestamp =
         DateFormat('yyyy-MM-dd HH:mm:ss').format(timestamp);
 
-    return Dismissible(
-      onDismissed: (direction) {
-        if (direction == DismissDirection.endToStart) {
-          // Sağa doğru kaydırıldığında yapılacak işlemler
-        } else if (direction == DismissDirection.startToEnd) {
-          // Sola doğru kaydırıldığında yapılacak işlemler
-        }
-      },
-      key: UniqueKey(),
-      child: Column(
-        children: [
-          SizedBox(
-            height: 90.h,
-            width: double.infinity,
-            child: Row(
-              children: [
-                Image.asset(
-                  "images/Alarm.png",
-                  height: 40.h,
-                  width: 40.w,
-                ),
-                const SizedBox(
-                  width: 10,
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      truncateText(title, 45),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w400,
-                        fontSize: 14.sp,
-                      ),
+    return Column(
+      children: [
+        SizedBox(
+          height: 90.h,
+          width: double.infinity,
+          child: Row(
+            children: [
+              Image.asset(
+                "images/Alarm.png",
+                height: 40.h,
+                width: 40.w,
+              ),
+              const SizedBox(
+                width: 10,
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    truncateText(title, 45),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14.sp,
                     ),
-                    SizedBox(
-                      height: 5.h,
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          truncateText(content, 50),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w400,
-                            fontSize: 16,
-                          ),
+                  ),
+                  SizedBox(
+                    height: 5.h,
+                  ),
+                  Row(
+                    children: [
+                      Text(
+                        truncateText(content, 50),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w400,
+                          fontSize: 16,
                         ),
-                        // Text(
-                        //   category,
-                        //   style: const TextStyle(
-                        //       fontSize: 14,
-                        //       fontWeight: FontWeight.w400,
-                        //       color: Color(0xFFD85252)),
-                        // ),
-                      ],
-                    ),
-                    SizedBox(
-                      height: 5.h,
-                    ),
-                    Text(
-                      formattedTimestamp,
-                      style: TextStyle(
-                        color: const Color(0xFF8D93A1),
-                        fontWeight: FontWeight.w400,
-                        fontSize: 14.sp,
                       ),
+                      // Text(
+                      //   category,
+                      //   style: const TextStyle(
+                      //       fontSize: 14,
+                      //       fontWeight: FontWeight.w400,
+                      //       color: Color(0xFFD85252)),
+                      // ),
+                    ],
+                  ),
+                  SizedBox(
+                    height: 5.h,
+                  ),
+                  Text(
+                    formattedTimestamp,
+                    style: TextStyle(
+                      color: const Color(0xFF8D93A1),
+                      fontWeight: FontWeight.w400,
+                      fontSize: 14.sp,
                     ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          Divider(
-            indent: 20.w,
-            endIndent: 20.w,
-            color: Colors.white,
-          ),
-          SizedBox(
-            height: 10.h,
-          ),
-        ],
-      ),
+        ),
+        Divider(
+          indent: 20.w,
+          endIndent: 20.w,
+          color: Colors.white,
+        ),
+        SizedBox(
+          height: 10.h,
+        ),
+      ],
     );
   }
 }
@@ -248,7 +245,12 @@ class _NotificationColumnState extends State<NotificationColumn> {
       future: myController.fetchNotifications(widget.categoryFilter),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return CircularProgressIndicator();
+          return Center(
+            child: SizedBox(
+                width: 50.w,
+                height: 50.h,
+                child: const CircularProgressIndicator()),
+          );
         } else if (snapshot.hasError) {
           return Text('Error: ${snapshot.error}');
         } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -292,177 +294,6 @@ class _NotificationColumnState extends State<NotificationColumn> {
     );
   }
 }
-
-// class AlarmColumn extends StatelessWidget {
-//   final int categoryFilter;
-//   final NotificationController myController = Get.put(NotificationController());
-
-//   AlarmColumn({
-//     Key? key,
-//     required this.categoryFilter,
-//   }) : super(key: key);
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return GetBuilder<NotificationController>(
-//       init: myController,
-//       builder: (controller) {
-//         // Controller içindeki future fonksiyonuna erişmek
-//         return FutureBuilder<List<MockNotificationModel>>(
-//           future: controller.fetchNotifications(categoryFilter),
-//           // FutureBuilder için uygun future'ı belirtin
-//           builder: (context, snapshot) {
-//             if (snapshot.connectionState == ConnectionState.waiting) {
-//               return CircularProgressIndicator();
-//             } else if (snapshot.hasError) {
-//               return Text('Error: ${snapshot.error}');
-//             } else if (snapshot.data != null) {
-//               List<MockNotificationModel> notifications = snapshot.data!;
-
-//               // Geri kalan widget oluşturma işlemleri...
-//               return SizedBox(
-//                 height: 600,
-//                 child: ListView.builder(
-//                   itemCount: notifications.length,
-//                   itemBuilder: (context, index) {
-//                     // Her bir bildirim için gerekli bilgileri al
-//                     String title = notifications[index].title;
-//                     String content = notifications[index].content;
-
-//                     DateTime timestamp = DateTime.fromMillisecondsSinceEpoch(
-//                         notifications[index].created_at);
-
-//                     return NotificationOption(
-//                       title: title,
-//                       content: content,
-//                       timestamp: timestamp,
-//                     );
-//                   },
-//                 ),
-//               );
-//             } else {
-//               return Text('No data available');
-//             }
-//           },
-//         );
-//       },
-//     );
-//   }
-// }
-
-// class SystemColumn extends StatelessWidget {
-//   final int categoryFilter;
-//   final NotificationController myController = Get.put(NotificationController());
-
-//   SystemColumn({
-//     Key? key,
-//     required this.categoryFilter,
-//   }) : super(key: key);
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return GetBuilder<NotificationController>(
-//       init: myController,
-//       builder: (controller) {
-//         // Controller içindeki future fonksiyonuna erişmek
-//         return FutureBuilder<List<MockNotificationModel>>(
-//           future: controller.fetchNotifications(categoryFilter),
-//           // FutureBuilder için uygun future'ı belirtin
-//           builder: (context, snapshot) {
-//             if (snapshot.connectionState == ConnectionState.waiting) {
-//               return CircularProgressIndicator();
-//             } else if (snapshot.hasError) {
-//               return Text('Error: ${snapshot.error}');
-//             } else if (snapshot.data != null) {
-//               List<MockNotificationModel> notifications = snapshot.data!;
-
-//               // Geri kalan widget oluşturma işlemleri...
-//               return SizedBox(
-//                 height: 600,
-//                 child: ListView.builder(
-//                   itemCount: notifications.length,
-//                   itemBuilder: (context, index) {
-//                     // Her bir bildirim için gerekli bilgileri al
-//                     String title = notifications[index].title;
-//                     String content = notifications[index].content;
-
-//                     DateTime timestamp = DateTime.fromMillisecondsSinceEpoch(
-//                         notifications[index].created_at);
-
-//                     return NotificationOption(
-//                       title: title,
-//                       content: content,
-//                       timestamp: timestamp,
-//                     );
-//                   },
-//                 ),
-//               );
-//             } else {
-//               return Text('No data available');
-//             }
-//           },
-//         );
-//       },
-//     );
-//   }
-// }
-
-// class CampaignColumn extends StatelessWidget {
-//   final int categoryFilter;
-//   final NotificationController myController = Get.put(NotificationController());
-
-//   CampaignColumn({
-//     Key? key,
-//     required this.categoryFilter,
-//   }) : super(key: key);
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return GetBuilder<NotificationController>(
-//       init: myController,
-//       builder: (controller) {
-//         // Controller içindeki future fonksiyonuna erişmek
-//         return FutureBuilder<List<MockNotificationModel>>(
-//           future: controller.fetchNotifications(categoryFilter),
-//           // FutureBuilder için uygun future'ı belirtin
-//           builder: (context, snapshot) {
-//             if (snapshot.connectionState == ConnectionState.waiting) {
-//               return CircularProgressIndicator();
-//             } else if (snapshot.hasError) {
-//               return Text('Error: ${snapshot.error}');
-//             } else if (snapshot.data != null) {
-//               List<MockNotificationModel> notifications = snapshot.data!;
-
-//               // Geri kalan widget oluşturma işlemleri...
-//               return SizedBox(
-//                 height: 600,
-//                 child: ListView.builder(
-//                   itemCount: notifications.length,
-//                   itemBuilder: (context, index) {
-//                     // Her bir bildirim için gerekli bilgileri al
-//                     String title = notifications[index].title;
-//                     String content = notifications[index].content;
-
-//                     DateTime timestamp = DateTime.fromMillisecondsSinceEpoch(
-//                         notifications[index].created_at);
-
-//                     return NotificationOption(
-//                       title: title,
-//                       content: content,
-//                       timestamp: timestamp,
-//                     );
-//                   },
-//                 ),
-//               );
-//             } else {
-//               return Text('No data available');
-//             }
-//           },
-//         );
-//       },
-//     );
-//   }
-// }
 
 class NotificationColumnTitle extends StatelessWidget {
   const NotificationColumnTitle({
@@ -533,7 +364,7 @@ class _NotificationTabState extends State<NotificationTab> {
     return GestureDetector(
       onTap: widget.onTap,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 8),
+        margin: const EdgeInsets.symmetric(horizontal: 3),
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: widget.isActive ? const Color(0xFF6E4AFC) : Colors.black,

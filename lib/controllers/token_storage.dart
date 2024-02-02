@@ -1,8 +1,8 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TokenStorage {
-  static const String sTokenKey = 'user_token';
-  static const String sSessionKey = "usersSessionKey";
+  static String sTokenKey = 'token_key';
+  static String sSessionKey = "session_key";
   static late SharedPreferences _prefs;
 
   // İlk defa çağrıldığında çalışacak başlatma fonksiyonu

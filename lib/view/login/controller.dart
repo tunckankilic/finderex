@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'package:finderex/common/services/validator.dart';
 import 'package:finderex/controllers/token_storage.dart';
 import 'package:finderex/models/auto_validator_model.dart';
+import 'package:finderex/view/home.dart';
 import 'package:finderex/view/login/view.dart';
 import 'package:finderex/view/notifications/view.dart';
 import 'package:flutter/gestures.dart';
@@ -60,7 +61,7 @@ class LoginController extends GetxController {
         await TokenStorage.saveToken(token);
         await TokenStorage.saveSession(session);
 
-        Get.offAll(NotificationView());
+        Get.offAll(Home());
         return responseData;
       } else {
         // HTTP isteği başarısız oldu.

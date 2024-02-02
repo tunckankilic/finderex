@@ -1,14 +1,18 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
+import 'package:finderex/controllers/token_controller.dart';
 import 'package:finderex/controllers/token_storage.dart';
 import 'package:finderex/models/mock_notification_model.dart';
 import 'package:finderex/models/notification_category_model.dart';
+import 'package:finderex/view/login/controller.dart';
 import 'package:finderex/view/notifications/view.dart';
+import 'package:finderex/view/splash/view.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationController extends GetxController {
   late PageController pageController;
@@ -19,27 +23,61 @@ class NotificationController extends GetxController {
       <NotificationCategoryModel>[].obs;
   RxList<MockNotificationModel> modelList = <MockNotificationModel>[].obs;
   var activeCategory = Rx<NotificationCategoryModel?>(null);
-  final RxList<Widget> currentPageItems = <Widget>[].obs;
+  final RxList<MockNotificationModel> currentPageItems =
+      <MockNotificationModel>[].obs;
   final RxList<bool> tabStates = <bool>[].obs;
-  final RxList<MockNotificationModel> category0Notifications =
-      <MockNotificationModel>[].obs;
-  final RxList<MockNotificationModel> category1Notifications =
-      <MockNotificationModel>[].obs;
-  final RxList<MockNotificationModel> category2Notifications =
-      <MockNotificationModel>[].obs;
-  final RxList<MockNotificationModel> category3Notifications =
-      <MockNotificationModel>[].obs;
-  String token =
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTQwNSwic291cmNlIjoib3RoZXIiLCJzZXNzaW9uIjoiYzUxYjZjYmQtYzExNi0xMWVlLTg3ODMtZDYzMTdmMzAxYThkIiwiZXhwIjoxODE1NjY1NDAzLCJpYXQiOjE3MDY4MDE0MDN9.GTdnhBpVjps2PtnIxAf0VbWjyjViangK5HE3ARAvLcI";
+  final RxList<List<MockNotificationModel>> categoryNotifications =
+      <List<MockNotificationModel>>[].obs;
+  final StreamController<List<NotificationCategoryModel>>
+      _categoriesStreamController =
+      StreamController<List<NotificationCategoryModel>>.broadcast();
+
+  Stream<List<NotificationCategoryModel>> get categoriesStream =>
+      _categoriesStreamController.stream;
+
+  NotificationController() {
+    pageController = PageController();
+  }
+
+  // String token =
+  //     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTQwNSwic291cmNlIjoib3RoZXIiLCJzZXNzaW9uIjoiYzUxYjZjYmQtYzExNi0xMWVlLTg3ODMtZDYzMTdmMzAxYThkIiwiZXhwIjoxODE1NjY1NDAzLCJpYXQiOjE3MDY4MDE0MDN9.GTdnhBpVjps2PtnIxAf0VbWjyjViangK5HE3ARAvLcI";
 
   String baseURL = 'https://democore.finderex.io/v1/notifications';
   @override
-  void onInit() {
+  void onInit() async {
+    // await getToken();
     permissionRequest();
-    pageController = PageController();
     fetchAndSetCategories();
-    fetchNotifications(1);
+    // fetchNotifications(1);
     super.onInit();
+  }
+
+  Future<void> cikisYap(BuildContext context) async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Çıkış yapmak istiyor musunuz ?"),
+        content: Row(
+          children: [
+            ElevatedButton(
+              onPressed: () async {
+                await TokenStorage.removeSession();
+                await TokenStorage.removeToken();
+                Get.offAll(
+                  Splash(),
+                );
+              },
+              child: Text("Evet"),
+            ),
+            ElevatedButton(
+                onPressed: () {
+                  Get.back();
+                },
+                child: Text("Hayır"))
+          ],
+        ),
+      ),
+    );
   }
 
   // changePage metodunu güncelleyin
@@ -66,14 +104,33 @@ class NotificationController extends GetxController {
     log("Token: $token");
   }
 
+  // Future<String?> getToken() async {
+  //   try {
+  //     var sp = await SharedPreferences.getInstance();
+  //     token = sp.getString(TokenStorage.sTokenKey);
+  //     if (token != null && token!.isNotEmpty) {
+  //       return token;
+  //     } else {
+  //       // Handle the case when the token is not available
+  //       log('Token not found in SharedPreferences');
+  //       return null;
+  //     }
+  //   } catch (e) {
+  //     // Handle exceptions, such as SharedPreferences not being available
+  //     log('Error while getting token from SharedPreferences: $e');
+  //     return null;
+  //   }
+  // }
+
   Future<String> fetchCategories() async {
+    var sp = await SharedPreferences.getInstance();
     final url =
         Uri.parse('https://democore.finderex.io/v1/notifications/categories/');
     final response = await http.get(
       url,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
+        'Authorization': 'Bearer ${sp.getString(TokenStorage.sTokenKey)}',
         'X-Lang-Code': 'tr',
       },
     );
@@ -94,7 +151,8 @@ class NotificationController extends GetxController {
       if (data['error'] == false) {
         final List<dynamic> categoriesData = data['data'];
 
-        categories.assignAll(categoriesData.map((category) {
+        List<NotificationCategoryModel> updatedCategories =
+            categoriesData.map((category) {
           bool isActive = category['is_active'] ?? false;
           tabStates.add(isActive); // Tab durumunu ekleyin
           return NotificationCategoryModel(
@@ -103,7 +161,13 @@ class NotificationController extends GetxController {
             isActive: isActive,
             catId: category['cat_id'] ?? 0,
           );
-        }).toList());
+        }).toList();
+
+        categories.assignAll(updatedCategories);
+
+        // Yeni eklenen kısım
+        _categoriesStreamController.add(updatedCategories);
+        // Yeni eklenen kısım son
       } else {
         log('API Hata: ${data['message']}');
       }
@@ -113,12 +177,14 @@ class NotificationController extends GetxController {
   }
 
   Future<List<MockNotificationModel>> fetchNotifications(int category) async {
+    var sp = await SharedPreferences.getInstance();
     try {
       final response = await http.get(
         Uri.parse(
             'https://democore.finderex.io/v1/notifications?cid=$category'),
         headers: {
-          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${sp.getString(TokenStorage.sTokenKey)}',
           'X-Lang-Code': 'tr',
         },
       );
@@ -126,13 +192,19 @@ class NotificationController extends GetxController {
       if (response.statusCode == 200) {
         final List<dynamic> jsonData =
             json.decode(utf8.decode(response.body.codeUnits))['data'];
-        // log(jsonData.toString());
+
         List<MockNotificationModel> notifications = jsonData
             .map((json) => MockNotificationModel.fromJson(json))
             .toList();
-        for (int i = 0; i < notifications.length; i++) {
-          log(notifications[i].title);
+
+        // Kategorilere göre ayırın
+        if (categoryNotifications.length <= category) {
+          categoryNotifications.add(notifications);
+        } else {
+          categoryNotifications[category] = notifications;
         }
+
+        update(); // Sayfa değiştikçe güncelleme yap
         return notifications;
       } else {
         print("Server Response: ${response.body}");
@@ -144,96 +216,13 @@ class NotificationController extends GetxController {
     }
   }
 
-  // Future<String> fetchNotifications(int category) async {
-  //   try {
-  //     final response = await http.get(
-  //       Uri.parse(
-  //           'https://democore.finderex.io/v1/notifications?cid=$category'),
-  //       headers: {
-  //         'Authorization': 'Bearer $token',
-  //         'X-Lang-Code': 'tr',
-  //       },
-  //     );
-
-  //     if (response.statusCode == 200) {
-  //       return response.body;
-  //     } else {
-  //       print("Server Response: ${response.body}");
-  //       throw Exception('Failed to load notifications');
-  //     }
-  //   } catch (error) {
-  //     print("Request Error: $error");
-  //     throw Exception('Request failed');
-  //   }
-  // }
-
-  // Bu metod ile sayfa değiştiğinde currentPageItems güncellenecek
   void updateCurrentPageItems() {
-    currentPageItems.clear(); // Mevcut listeyi temizle
+    currentPageItems.clear();
 
-    // // Yeni elemanları ekle
-    // for (int i = 0; i < 5; i++) {
-    //   currentPageItems.add(NotificationOption());
-    // }
+    if (currentPage.value < categoryNotifications.length) {
+      currentPageItems.addAll(categoryNotifications[currentPage.value]);
+    }
   }
-
-  // Future<List<MockNotificationModel>> fetchNotifications(
-  //     int categoryFilter) async {
-  //   final String url = '$baseURL?cid=$categoryFilter';
-
-  //   try {
-  //     final response = await http.get(
-  //       Uri.parse(url),
-  //       headers: {
-  //         'Authorization': 'Bearer $token',
-  //         'X-Lang-Code': 'tr',
-  //       },
-  //     );
-
-  //     if (response.statusCode == 200) {
-  //       final List<dynamic> jsonData = json.decode(response.body)['data'];
-
-  //       List<MockNotificationModel> notifications = jsonData
-  //           .map((json) => MockNotificationModel.fromJson(json))
-  //           .toList();
-
-  //       return notifications;
-  //     } else {
-  //       throw Exception('Failed to load notifications');
-  //     }
-  //   } catch (error) {
-  //     log('Error: $error');
-  //     throw Exception('Failed to load notifications');
-  //   }
-  // }
-
-  // Future<void> fetchAndSetNotifications(int categoryFilter) async {
-  //   try {
-  //     List<MockNotificationModel> result =
-  //         await fetchNotifications(categoryFilter);
-
-  //     // İlgili kategoriye göre listeyi güncelle
-  //     switch (categoryFilter) {
-  //       case 0:
-  //         category0Notifications.assignAll(result);
-  //         break;
-  //       case 1:
-  //         category1Notifications.assignAll(result);
-  //         break;
-  //       case 2:
-  //         category2Notifications.assignAll(result);
-  //         break;
-  //       case 3:
-  //         category3Notifications.assignAll(result);
-  //         break;
-  //       default:
-  //         break;
-  //     }
-  //   } catch (error) {
-  //     // Hata durumunu ele al
-  //     print('Error fetching notifications: $error');
-  //   }
-  // }
 
   var pages = [
     // NotificationColumn(categoryFilter: 0),
@@ -246,211 +235,3 @@ class NotificationController extends GetxController {
     NotificationColumn(categoryFilter: 3),
   ];
 }
-
-
-  // RxList<MockNotificationModel> getCombinedList() {
-  //   return Rx.combineLatestList<MockNotificationModel>(streams);
-  // }
-  // Future<void> fetchDataForPage(int pageIndex) async {
-  //   // Verileri çek
-  //   List<MockNotificationModel> fetchedData =
-  //       await fetchNotificationsForPageIndex(pageIndex);
-
-  //   // Model listesini güncelle
-  //   modelList.assignAll(fetchedData);
-
-  //   // Sayfa değiştiğinde güncelleme yap
-  //   updateCurrentPageItems();
-  // }
-
-  // Future<List<MockNotificationModel>> fetchNotificationsForPageIndex(
-  //     int pageIndex) async {
-  //   try {
-  //     // Veriyi çekme işlemleri burada gerçekleştirilecek
-  //     // Örneğin: API isteği ile veriyi çekme
-  //     // Bu örnek fonksiyonunuzu projenize uygun şekilde güncelleyin
-  //     String apiUrl = 'https://example.com/api/notifications?page=$pageIndex';
-  //     final response = await http.get(
-  //       Uri.parse(apiUrl),
-  //       headers: {
-  //         'Authorization': 'Bearer YOUR_BEARER_TOKEN',
-  //         'X-Lang-Code': 'tr',
-  //       },
-  //     );
-
-  //     if (response.statusCode == 200) {
-  //       final List<dynamic> jsonData = json.decode(response.body)['data'];
-
-  //       return jsonData
-  //           .map((json) => MockNotificationModel.fromJson(json))
-  //           .toList();
-  //     } else {
-  //       throw Exception('Failed to load notifications');
-  //     }
-  //   } catch (error) {
-  //     throw Exception('Error fetching notifications: $error');
-  //   }
-  // }
-
-  // @override
-  // void onClose() {
-  //   // StreamController'ları kapat
-  //   streamController1.close();
-  //   streamController2.close();
-  //   streamController3.close();
-  //   streamController4.close();
-  //   super.onClose();
-  // }
-
-
-  // Future<Stream<List<MockNotificationModel>>> nFetchNotifications() async {
-  //   // Kategori 0: Tüm bildirimler
-  //   Stream<List<MockNotificationModel>> streamAll = _fetchNotifications(0);
-
-  //   // Kategori 1: notify_category değeri 1 olanlar
-  //   Stream<List<MockNotificationModel>> streamCategory1 =
-  //       _fetchNotifications(1);
-
-  //   // Kategori 2: notify_category değeri 2 olanlar
-  //   Stream<List<MockNotificationModel>> streamCategory2 =
-  //       _fetchNotifications(2);
-
-  //   // Kategori 3: notify_category değeri 3 olanlar
-  //   Stream<List<MockNotificationModel>> streamCategory3 =
-  //       _fetchNotifications(3);
-
-  //   // İlgili kategoriye göre stream'leri döndür
-  //   return StreamZip([
-  //     streamAll,
-  //     streamCategory1,
-  //     streamCategory2,
-  //     streamCategory3,
-  //   ]);
-  // }
-
-
-  // Future<Stream<List<MockNotificationModel>>> _fetchNotifications(
-  //     int categoryFilter) async {
-  //   late StreamController<List<MockNotificationModel>> controller;
-  //   late StreamSubscription subscription;
-
-  //   controller =
-  //       StreamController<List<MockNotificationModel>>(onListen: () async {
-  //     while (true) {
-  //       try {
-  //         final response = await http.get(
-  //           Uri.parse('$notificationURL&category_id=$categoryFilter'),
-  //           headers: {
-  //             'Authorization': 'Bearer YOUR_BEARER_TOKEN',
-  //             "X-Lang-Code": "tr",
-  //           },
-  //         );
-
-  //         if (response.statusCode == 200) {
-  //           final List<dynamic> jsonData = json.decode(response.body)['data'];
-
-  //           // Filtreleme işlemi
-  //           List<MockNotificationModel> filteredNotifications = jsonData
-  //               .map((json) => MockNotificationModel.fromJson(json))
-  //               .where((notification) =>
-  //                   categoryFilter == 0 ||
-  //                   notification.notify_category == categoryFilter)
-  //               .toList();
-
-  //           // Veriyi stream'e ekleyerek döndür
-  //           controller.add(filteredNotifications);
-  //         } else {
-  //           throw Exception('Failed to load notifications');
-  //         }
-  //       } catch (e) {
-  //         print('Error: $e');
-  //       }
-
-  //       // Belirli bir süre bekleyerek tekrar isteği yap
-  //       await Future.delayed(Duration(seconds: 30));
-  //     }
-  //   }, onCancel: () {
-  //     subscription.cancel();
-  //   });
-
-  //   subscription = controller.stream.listen((data) {});
-
-  //   return controller.stream;
-  // }
-
-
-/*
-
-  Future<void> _addDataToStream(
-      StreamController<List<MockNotificationModel>> controller,
-      int categoryFilter) async {
-    while (true) {
-      try {
-        final response = await http.get(
-          Uri.parse('$notificationURL&category_id=$categoryFilter'),
-          headers: {
-            'Authorization': 'Bearer YOUR_BEARER_TOKEN',
-            "X-Lang-Code": "tr",
-          },
-        );
-
-        if (response.statusCode == 200) {
-          final List<dynamic> jsonData = json.decode(response.body)['data'];
-
-          // Filtreleme işlemi
-          List<MockNotificationModel> filteredNotifications = jsonData
-              .map((json) => MockNotificationModel.fromJson(json))
-              .where((notification) =>
-                  categoryFilter == 0 ||
-                  notification.notify_category == categoryFilter)
-              .toList();
-
-          // Veriyi stream'e ekleyerek döndür
-          controller.add(filteredNotifications);
-        } else {
-          throw Exception('Failed to load notifications');
-        }
-      } catch (e) {
-        log('Error: $e');
-      }
-
-      // Belirli bir süre bekleyerek tekrar isteği yap
-      await Future.delayed(Duration(seconds: 30));
-    }
-  }
-
-
-  // Future<List<MockNotificationModel>> fetchNotifications(
-  //     int categoryFilter) async {
-  //   final response = await http.get(
-  //     Uri.parse(notificationURL),
-  //     headers: {
-  //       'Authorization': 'Bearer YOUR_BEARER_TOKEN',
-  //       "X-Lang-Code": "tr",
-  //     },
-  //   );
-
-  //   if (response.statusCode == 200) {
-  //     final List<dynamic> jsonData = json.decode(response.body)['data'];
-
-  //     // Filtreleme işlemi
-  //     List<MockNotificationModel> filteredNotifications = jsonData
-  //         .map((json) => MockNotificationModel.fromJson(json))
-  //         .where((notification) =>
-  //             categoryFilter == 0 ||
-  //             notification.notify_category == categoryFilter)
-  //         .toList();
-
-  //     return filteredNotifications;
-  //   } else {
-  //     throw Exception('Failed to load notifications');
-  //   }
-  // }
-
-  // late List<Stream<List<MockNotificationModel>>> streams;
-  // late StreamController<List<MockNotificationModel>> streamController1;
-  // late StreamController<List<MockNotificationModel>> streamController2;
-  // late StreamController<List<MockNotificationModel>> streamController3;
-  // late StreamController<List<MockNotificationModel>> streamController4;
-
- */
