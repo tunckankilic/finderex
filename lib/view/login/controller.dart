@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:convert';
 import 'dart:developer';
 
@@ -25,12 +27,12 @@ class LoginController extends GetxController {
     validator: (text) =>
         ValidatorService().passwordUpperLowerNumber(text, minLength: 6),
   );
-
   Future<Map<String, dynamic>> loginUser({
     required int countryId,
     required String userName,
     required String password,
     required bool rememberMe,
+    required BuildContext context,
   }) async {
     final url = Uri.parse('https://demoauthv2.finderex.io/v2/auth/login');
     final body = jsonEncode({
@@ -48,6 +50,8 @@ class LoginController extends GetxController {
         },
         body: body,
       );
+      log("Response Status Code: ${response.statusCode}");
+      log("Response Body: ${response.body}");
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
@@ -63,51 +67,72 @@ class LoginController extends GetxController {
 
         Get.offAll(Home());
         return responseData;
+      } else if (response.statusCode == 401) {
+        // HTTP isteği başarısız oldu. Hatalı kullanıcı adı veya şifre.
+        showLoginErrorDialogWithBackButton(
+            "Kullanıcı adı veya şifre yanlış, Tekrar Deneyiniz", context);
+        log("Invalid credentials");
+        throw Exception('Invalid credentials');
+      } else if (response.statusCode == 409) {
+        // HTTP isteği başarısız oldu. Kullanıcı kimlik bilgileri geçerli değil.
+        await showLoginErrorDialogWithBackButton(
+            "IKullanıcı adı veya şifre yanlış, Tekrar Deneyiniz", context);
+        log("Invalid credentials");
+        return {}; // veya başka bir değer dönebilirsiniz, bu senaryoya bağlı
       } else {
-        // HTTP isteği başarısız oldu.
-        Get.snackbar(
-          'Error',
-          'Login failed. Please try again.',
-          barBlur: 5,
-          backgroundColor: Colors.grey[700]!.withOpacity(0.75),
-          colorText: Colors.white,
-          animationDuration: const Duration(milliseconds: 400),
-        );
-
+        // Diğer hata durumları için genel hata mesajı göster.
+        showLoginErrorDialogWithBackButton(
+            "Hatalı Giriş, Tekrar Deneyiniz", context);
         log("Response Failed");
         throw Exception('Failed to load data');
       }
     } catch (error) {
       // HTTP isteği sırasında bir hata oluştu.
-      Get.snackbar(
-        'Error',
-        'An error occurred. Please try again.',
-        barBlur: 5,
-        backgroundColor: Colors.grey[700]!.withOpacity(0.75),
-        colorText: Colors.white,
-        animationDuration: const Duration(milliseconds: 400),
-      );
-
+      showLoginErrorDialogWithBackButton(
+          "Bir sorun oluştu. Tekrar deneyiniz", context);
       log("Request Error: $error");
-      throw Exception('Request failed');
+      throw Exception('Request failed: $error');
     }
+  }
+
+  Future<void> showLoginErrorDialogWithBackButton(
+      String errorMessage, BuildContext context) async {
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Hata'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(errorMessage),
+              SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Kapat alert dialog
+                },
+                child: Text('Geri'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void login(
       {required int countryId,
       required String userName,
       required String password,
-      required bool rememberMe}) async {
+      required bool rememberMe,
+      required BuildContext context}) async {
     if (formKey.currentState?.validate() == true) {
-      Get.showOverlay(
-        asyncFunction: () async {
-          await loginUser(
-            countryId: countryId,
-            userName: userName,
-            password: password,
-            rememberMe: rememberMe,
-          );
-        },
+      await loginUser(
+        context: context,
+        countryId: countryId,
+        userName: userName,
+        password: password,
+        rememberMe: rememberMe,
       );
     } else {
       //shake animation maybe?

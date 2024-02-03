@@ -82,29 +82,10 @@ class Login extends GetView<LoginController> {
                             borderColor: Colors.grey[600]!.withOpacity(0.5),
                             keyboardType: TextInputType.visiblePassword,
                           ),
-                          /*Todo
-                              GestureDetector(
-                                onTap: () {
-                                  //controller.onForgotPassword(context);
-                                },
-                                child: Container(
-                                  color: Colors.transparent,
-                                  padding: context.paddingNormal,
-                                  alignment: Alignment.centerLeft,
-                                  child: RichText(
-                                    text: TextSpan(children: [
-                                      TextSpan(
-                                        text: 'Forgot password?',
-                                        style:TextStyle(fontSize: 12)
-                                            .primaryColor,
-                                      ),
-                                    ]),
-                                  ),
-                                ),
-                              ),*/
                           SizedBox(height: context.mediumValue),
                           ConfirmButton(
-                            onClick: () => controller.loginUser(
+                            onClick: () => controller.login(
+                                context: context,
                                 countryId: 225,
                                 userName:
                                     controller.emailAddress.textController.text,
