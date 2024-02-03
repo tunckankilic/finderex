@@ -10,11 +10,15 @@ import 'package:finderex/view/notifications/view.dart';
 import 'package:finderex/view/splash/view.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class NotificationController extends GetxController {
+  FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+  Map<int, List<MockNotificationModel>> categoryCache = {};
   late PageController pageController;
   ScrollController scrollController = ScrollController();
   RxInt selectedIndex = 0.obs;
@@ -31,7 +35,12 @@ class NotificationController extends GetxController {
   final StreamController<List<NotificationCategoryModel>>
       _categoriesStreamController =
       StreamController<List<NotificationCategoryModel>>.broadcast();
-
+  final androidChannel = const AndroidNotificationChannel(
+    "@string/default_channel_id",
+    "Important Notifications",
+    description: "This channel is used for important notifications",
+    importance: Importance.defaultImportance,
+  );
   Stream<List<NotificationCategoryModel>> get categoriesStream =>
       _categoriesStreamController.stream;
 
@@ -82,9 +91,8 @@ class NotificationController extends GetxController {
 
   // changePage metodunu güncelleyin
   void changePage(int pageIndex) {
+    pageController.jumpToPage(pageIndex);
     currentPage.value = pageIndex;
-    update(); // Sayfa değiştikçe güncelleme yap
-    updateCurrentPageItems(); // Sayfa değiştikçe item'ları güncelle
   }
 
   void updateSelectedIndex(int index) {
@@ -176,8 +184,30 @@ class NotificationController extends GetxController {
     }
   }
 
+  Future<void> _showNotification(MockNotificationModel notification) async {
+    await flutterLocalNotificationsPlugin.show(
+      notification.id.hashCode,
+      notification.title,
+      notification.content,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          androidChannel.id,
+          androidChannel.name,
+          channelDescription: androidChannel.description,
+          icon: "@drawable/ic_launcher",
+        ),
+      ),
+      payload: notification.id, // Örneğin sadece id'yi payload olarak ekledik
+    );
+  }
+
   Future<List<MockNotificationModel>> fetchNotifications(int category) async {
     var sp = await SharedPreferences.getInstance();
+    if (categoryCache.containsKey(category)) {
+      // Kategori zaten önbellekte varsa, önbellekten veriyi al
+      return categoryCache[category]!;
+    }
+
     try {
       final response = await http.get(
         Uri.parse(
@@ -205,6 +235,15 @@ class NotificationController extends GetxController {
         }
 
         update(); // Sayfa değiştikçe güncelleme yap
+
+        // Bildirim gösterme işlemi
+        for (var notification in notifications) {
+          _showNotification(notification);
+        }
+
+        // Önbelleğe al
+        categoryCache[category] = notifications;
+
         return notifications;
       } else {
         print("Server Response: ${response.body}");

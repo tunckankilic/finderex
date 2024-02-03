@@ -3,10 +3,7 @@ import 'package:finderex/common/notification/fcm_service.dart';
 import 'package:finderex/controllers/token_controller.dart';
 import 'package:finderex/controllers/token_storage.dart';
 import 'package:finderex/view/home.dart';
-import 'package:finderex/view/login/view.dart';
-import 'package:finderex/view/notifications/view.dart';
 import 'package:finderex/view/onboarding/bindings.dart';
-import 'package:finderex/view/onboarding/view.dart';
 import 'package:finderex/view/splash/view.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -35,6 +32,7 @@ Future main() async {
   // Background Message Handler
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   await FCMService().setupFCM();
+  await FCMService().initialize();
   await TokenStorage.init();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   Get.put(TokenController()).onInit();

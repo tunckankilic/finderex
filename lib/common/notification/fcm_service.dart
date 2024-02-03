@@ -19,28 +19,76 @@ class FCMService {
     importance: Importance.defaultImportance,
   );
 
+  final NotificationDetails androidNotificationDetails =
+      const NotificationDetails(
+    android: AndroidNotificationDetails(
+      '@string/default_channel_id',
+      'Important Notifications',
+      channelDescription: 'This channel is used for important notifications',
+      importance: Importance.defaultImportance,
+    ),
+  );
+
+  static Future<void> onDidReceiveBackgroundNotificationResponse(
+    NotificationResponse response,
+  ) async {
+    final int id = response.id ?? 0;
+    final String? title = response.payload;
+    final String? body = response.payload;
+    final String? payload = response.payload;
+
+    if (payload != null) {
+      await selectNotification(payload);
+    }
+  }
+
+  Future<void> initialize() async {
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    const DarwinInitializationSettings initializationSettingsIOS =
+        DarwinInitializationSettings();
+
+    final InitializationSettings initializationSettings =
+        const InitializationSettings(
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsIOS,
+    );
+
+    // Bildirim kanalınızı ekleyin
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(androidChannel);
+
+    // Bildirimlerinizi göstermek için initialize işlemini gerçekleştirin
+    await flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) async {
+        final String? payload = response.payload;
+        if (payload != null) {
+          selectNotification(payload);
+        }
+      },
+      onDidReceiveBackgroundNotificationResponse:
+          FCMService.onDidReceiveBackgroundNotificationResponse,
+    );
+
+    // Örneğin: Periodik bir bildirim ekleyin
+    await flutterLocalNotificationsPlugin.periodicallyShow(
+      0,
+      'Periodic Title',
+      'Periodic Body',
+      RepeatInterval.hourly,
+      androidNotificationDetails,
+    );
+  }
+
   Future<void> initNotifications() async {
     await _firebaseMessaging.requestPermission();
     final fcmToken = await _firebaseMessaging.getToken();
     log("FCM Token: $fcmToken");
   }
-
-  // Future initLocalNotifications() async {
-  //   const ios = DarwinInitializationSettings();
-  //   const android = AndroidInitializationSettings("@drawable/ic_launcher");
-  //   const settings = InitializationSettings(android: android, iOS: ios);
-  //   await flutterLocalNotificationsPlugin.initialize(
-  //     settings,
-  //     onDidReceiveBackgroundNotificationResponse: (payload) {
-  //       final message = RemoteMessage.fromMap(jsonDecode(payload as String));
-  //       handleBackgroundMessage(message);
-  //     },
-  //   );
-  //   final platform =
-  //       flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
-  //           AndroidFlutterLocalNotificationsPlugin>();
-  //   await platform?.createNotificationChannel(androidChannel);
-  // }
 
   Future initPushNotifications() async {
     await _firebaseMessaging.setForegroundNotificationPresentationOptions(
@@ -69,11 +117,12 @@ class FCMService {
       sound: true,
     );
 
-    // Uygulama açıkken gelen bildirimleri dinleme
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       log("Received message: ${message.notification?.title}");
       final notification = message.notification;
       if (notification == null) return;
+
+      // API'den gelen bildirimin içindeki title ve body'yi kullanarak bildirim göster
       flutterLocalNotificationsPlugin.show(
         notification.hashCode,
         notification.title,
@@ -156,36 +205,3 @@ class FCMService {
     // Burada bildirim tıklanınca yapılacak işlemleri gerçekleştirebilirsiniz.
   }
 }
-
-
-  // static Future<void> initialize() async {
-  //   const AndroidInitializationSettings initializationSettingsAndroid =
-  //       AndroidInitializationSettings('@mipmap/ic_launcher');
-  //   const initializationSettingsIOS = DarwinInitializationSettings(
-  //       onDidReceiveLocalNotification: onDidReceiveLocalNotification);
-  //   InitializationSettings initializationSettings =
-  //       const InitializationSettings(
-  //           android: initializationSettingsAndroid,
-  //           iOS: initializationSettingsIOS);
-  //   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
-  // }
-
-  // static Future<void> showNotification(String title, String body) async {
-  //   const AndroidNotificationDetails androidPlatformChannelSpecifics =
-  //       AndroidNotificationDetails(
-  //     channelId,
-  //     channelName,
-  //     importance: Importance.max,
-  //     priority: Priority.high,
-  //     showWhen: false,
-  //   );
-  //   const NotificationDetails platformChannelSpecifics =
-  //       NotificationDetails(android: androidPlatformChannelSpecifics);
-  //   await flutterLocalNotificationsPlugin.show(
-  //     0,
-  //     title,
-  //     body,
-  //     platformChannelSpecifics,
-  //     payload: 'Default_Sound',
-  //   );
-  // }

@@ -111,7 +111,7 @@ class NotificationCategoryRow extends StatelessWidget {
                 isActive:
                     index == controller.selectedIndex.value ? true : false,
                 onTap: () {
-                  controller.changeTabIndex(index);
+                  controller.changePage(index);
                   log("index: $index");
                 },
               );
