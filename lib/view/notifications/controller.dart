@@ -112,24 +112,6 @@ class NotificationController extends GetxController {
     log("Token: $token");
   }
 
-  // Future<String?> getToken() async {
-  //   try {
-  //     var sp = await SharedPreferences.getInstance();
-  //     token = sp.getString(TokenStorage.sTokenKey);
-  //     if (token != null && token!.isNotEmpty) {
-  //       return token;
-  //     } else {
-  //       // Handle the case when the token is not available
-  //       log('Token not found in SharedPreferences');
-  //       return null;
-  //     }
-  //   } catch (e) {
-  //     // Handle exceptions, such as SharedPreferences not being available
-  //     log('Error while getting token from SharedPreferences: $e');
-  //     return null;
-  //   }
-  // }
-
   Future<String> fetchCategories() async {
     var sp = await SharedPreferences.getInstance();
     final url =
@@ -264,10 +246,6 @@ class NotificationController extends GetxController {
   }
 
   var pages = [
-    // NotificationColumn(categoryFilter: 0),
-    // NotificationColumn(categoryFilter: 1),
-    // NotificationColumn(categoryFilter: 2),
-    // NotificationColumn(categoryFilter: 3),
     NotificationColumn(categoryFilter: 0),
     NotificationColumn(categoryFilter: 1),
     NotificationColumn(categoryFilter: 2),
