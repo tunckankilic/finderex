@@ -1,10 +1,10 @@
 import 'dart:developer';
-import 'package:finderex/common/notification/fcm_service.dart';
-import 'package:finderex/controllers/token_controller.dart';
-import 'package:finderex/controllers/token_storage.dart';
-import 'package:finderex/view/home.dart';
-import 'package:finderex/view/onboarding/bindings.dart';
-import 'package:finderex/view/splash/view.dart';
+import 'package:finderex/core/services/fcm_service.dart';
+import 'package:finderex/core/controllers/token_controller.dart';
+import 'package:finderex/core/controllers/token_storage.dart';
+import 'package:finderex/src/home.dart';
+import 'package:finderex/src/onboarding/bindings.dart';
+import 'package:finderex/src/splash/view.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -54,7 +54,7 @@ class MyApp extends StatelessWidget {
               final String? userName = snapshot.data;
               // Check if userName is not null
               if (userName != null) {
-                return Home();
+                return const Home();
               } else {
                 return const Splash();
               }
